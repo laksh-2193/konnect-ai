@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Location</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        #location-info {
+            background-color: white;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div id="location-info">
+        <h1>Your Current Location</h1>
+        <p id="status">Fetching location data...</p>
+        <p><b>Area:</b> <span id="area"></span></p>
+        <p><b>City: </b><span id="city"></span></p>
+        <p><b>State: </b><span id="state"></span></p>
+        <p><b>Country: </b><span id="country"></span></p>
+        <p><b>Latitude:</b> <span id="latitude"></span></p>
+        <p><b>Longitude: </b><span id="longitude"></span></p>
+    </div>
+
+    <script>
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(showPosition, showError);
+            } else {
+                document.getElementById("status").innerHTML = "Geolocation is not supported by this browser.";
+            }
+        }
+
+        function showPosition(position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            
+            document.getElementById("latitude").innerHTML = latitude;
+            document.getElementById("longitude").innerHTML = longitude;
+            
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("area").innerHTML = data.address.suburb || data.address.neighbourhood || "N/A";
+                    document.getElementById("city").innerHTML = data.address.city || data.address.town || "N/A";
+                    document.getElementById("state").innerHTML = data.address.state || "N/A";
+                    document.getElementById("country").innerHTML = data.address.country || "N/A";
+                    document.getElementById("status").innerHTML = "Location data retrieved successfully!";
+                })
+                .catch(error => {
+                    console.error("Error fetching address data:", error);
+                    document.getElementById("status").innerHTML = "Error retrieving address data.";
+                });
+        }
+
+        function showError(error) {
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    document.getElementById("status").innerHTML = "User denied the request for Geolocation.";
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    document.getElementById("status").innerHTML = "Location information is unavailable.";
+                    break;
+                case error.TIMEOUT:
+                    document.getElementById("status").innerHTML = "The request to get user location timed out.";
+                    break;
+                case error.UNKNOWN_ERROR:
+                    document.getElementById("status").innerHTML = "An unknown error occurred.";
+                    break;
+            }
+        }
+
+        window.onload = getLocation;
+    </script>
+</body>
+</html>
